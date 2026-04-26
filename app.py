@@ -249,6 +249,10 @@ def patient_dashboard():
                            recent_reports=latest_uploads,
                            latest_prescription=latest_presc)
 
+@app.route('/patient/analyze', methods=['POST'])
+def analyze_report():
+    if 'user_id' not in session or session.get('role') not in ['patient', 'caretaker']:
+        return redirect(url_for('index'))
         
     is_caretaker = (session.get('role') == 'caretaker')
     
