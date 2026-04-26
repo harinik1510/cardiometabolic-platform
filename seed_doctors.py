@@ -1,4 +1,4 @@
-import sqlite3
+from database import get_db_connection
 import hashlib
 
 def hash_password(password):
@@ -67,20 +67,22 @@ DOCTORS = [
 ]
 
 def seed_doctors():
-    conn = sqlite3.connect('data/platform.db')
-    cursor = conn.cursor()
-    
-    password = hash_password('doctor123') # Default password for all doctors for now
+    conn = get_db_connection()
+    if not conn:
+        print("Failed to connect to TiDB")
+        return
+        
+    password = hash_password('doctor123')
     
     for doc in DOCTORS:
         name, email, pincode, spec, exp, fees, phone = doc
         try:
-            cursor.execute('''
+            conn.execute('''
             INSERT INTO users (name, email, password, role, pincode, specialization, experience, fees, phone)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (name, email, password, 'doctor', pincode, spec, exp, fees, phone))
-        except sqlite3.IntegrityError:
-            print(f"Doctor {email} already exists.")
+        except Exception as e:
+            print(f"Doctor {email} issue: {e}")
             
     conn.commit()
     conn.close()

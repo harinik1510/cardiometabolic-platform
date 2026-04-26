@@ -903,5 +903,14 @@ def lab_upload():
     
     return redirect(url_for('lab_assistant_dashboard'))
 
+@app.route('/seed')
+def seed_db():
+    try:
+        from seed_doctors import seed_doctors
+        seed_doctors()
+        return "<h1>Success!</h1><p>Doctors have been added to the database.</p>"
+    except Exception as e:
+        return f"<h1>Error</h1><p>{str(e)}</p>"
+
 if __name__ == '__main__':
     app.run(debug=True)
