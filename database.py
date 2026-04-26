@@ -32,8 +32,7 @@ def get_db_connection():
             user=os.getenv('TIDB_USER'),
             password=os.getenv('TIDB_PASSWORD'),
             database=os.getenv('TIDB_DB_NAME'),
-            ssl_verify_cert=True,
-            ssl_verify_identity=True,
+            ssl_verify_cert=False,
             autocommit=True
         )
         return MySQLConnectionWrapper(conn)
