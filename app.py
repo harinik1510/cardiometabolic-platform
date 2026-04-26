@@ -88,9 +88,13 @@ def login():
         flash('Database connection error. Please try again later.', 'danger')
         return redirect(url_for('auth', role=role))
         
-    user = conn.execute('SELECT * FROM users WHERE email = ? AND password = ? AND role = ?',
-                        (email, password, role)).fetchone()
-    conn.close()
+    try:
+        user = conn.execute('SELECT * FROM users WHERE email = ? AND password = ? AND role = ?',
+                            (email, password, role)).fetchone()
+        conn.close()
+    except Exception as e:
+        return f"<h1>SQL Error during Login:</h1><p>The app connected to TiDB successfully, but the query failed. Error details: <br><b>{str(e)}</b></p><br><p>This usually means the tables were not created properly.</p>"
+
 
     if user:
         session['user_id'] = user['id']
@@ -128,9 +132,10 @@ def register():
         flash('Registration successful! Please login.', 'success')
     except Exception as e:
         print(f"Registration error: {e}")
-        flash('Registration failed. Email may already exist or there was a database error.', 'danger')
+        return f"<h1>SQL Error during Registration:</h1><p>The app connected to TiDB successfully, but the insert query failed. Error details: <br><b>{str(e)}</b></p>"
     finally:
         conn.close()
+
     
     return redirect(url_for('auth', role=role))
 
