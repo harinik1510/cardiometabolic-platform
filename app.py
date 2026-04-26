@@ -908,7 +908,24 @@ def seed_db():
     try:
         from seed_doctors import seed_doctors
         seed_doctors()
-        return "<h1>Success!</h1><p>Doctors have been added to the database.</p>"
+        
+        # Seed Lab Assistant
+        from database import get_db_connection
+        import hashlib
+        conn = get_db_connection()
+        if conn:
+            password = hashlib.sha256('lab123'.encode()).hexdigest()
+            try:
+                conn.execute('''
+                INSERT INTO users (name, email, password, role)
+                VALUES (?, ?, ?, ?)
+                ''', ("Lab Assistant", "lab@example.com", password, "lab_assistant"))
+                conn.commit()
+            except Exception:
+                pass # Already exists
+            conn.close()
+
+        return "<h1>Success!</h1><p>Doctors and Lab Assistant have been added to the database.</p>"
     except Exception as e:
         return f"<h1>Error</h1><p>{str(e)}</p>"
 
