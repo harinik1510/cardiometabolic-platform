@@ -32,11 +32,13 @@ def get_db_connection():
             user=os.getenv('TIDB_USER'),
             password=os.getenv('TIDB_PASSWORD'),
             database=os.getenv('TIDB_DB_NAME'),
-            ssl_verify_cert=True
+            ssl_verify_cert=True,
+            ssl_verify_identity=True,
+            autocommit=True
         )
         return MySQLConnectionWrapper(conn)
     except Exception as e:
-        print(f"Error connecting to TiDB: {e}")
+        print(f"CRITICAL: Failed to connect to TiDB: {e}")
         return None
 
 def init_db():

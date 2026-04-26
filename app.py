@@ -84,6 +84,10 @@ def login():
     role = request.form.get('role')
 
     conn = get_db_connection()
+    if not conn:
+        flash('Database connection error. Please try again later.', 'danger')
+        return redirect(url_for('auth', role=role))
+        
     user = conn.execute('SELECT * FROM users WHERE email = ? AND password = ? AND role = ?',
                         (email, password, role)).fetchone()
     conn.close()
@@ -122,8 +126,9 @@ def register():
                      (name, email, password, role))
         conn.commit()
         flash('Registration successful! Please login.', 'success')
-    except sqlite3.IntegrityError:
-        flash('Email already exists.', 'danger')
+    except Exception as e:
+        print(f"Registration error: {e}")
+        flash('Registration failed. Email may already exist or there was a database error.', 'danger')
     finally:
         conn.close()
     
