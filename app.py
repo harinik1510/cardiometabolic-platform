@@ -865,43 +865,46 @@ def lab_upload():
     if 'user_id' not in session or session['role'] != 'lab_assistant':
         return redirect(url_for('index'))
     
-    patient_email = request.form.get('patient_email')
-    report_file = request.files.get('report')
-    
-    if report_file:
-        filename = f"lab_{patient_email}_{report_file.filename}"
-        report_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    try:
+        patient_email = request.form.get('patient_email')
+        report_file = request.files.get('report')
         
-        conn = get_db_connection()
-        # Find patient id and insert lab_upload record
-        patient = conn.execute('SELECT id, age, gender FROM users WHERE email = ?', (patient_email,)).fetchone()
-        if patient:
-            upload_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            conn.execute(
-                'INSERT INTO lab_uploads (lab_assistant_id, patient_email, file_path, upload_date) VALUES (?, ?, ?, ?)',
-                (session['user_id'], patient_email, filename, upload_time))
+        if report_file:
+            filename = f"lab_{patient_email}_{report_file.filename}"
+            report_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             
-            # Store filename in type so patient can download the exact file
-            notif_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            conn.execute(
-                'INSERT INTO notifications (user_id, message, type, created_at) VALUES (?, ?, ?, ?)',
-                (patient['id'],
-                 f'A new lab report "{report_file.filename}" has been uploaded and analyzed for you.',
-                 f'report_upload:{filename}',
-                 notif_time))
-            conn.commit()
-        conn.close()
+            conn = get_db_connection()
+            # Find patient id and insert lab_upload record
+            patient = conn.execute('SELECT id, age, gender FROM users WHERE email = ?', (patient_email,)).fetchone()
+            if patient:
+                upload_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                conn.execute(
+                    'INSERT INTO lab_uploads (lab_assistant_id, patient_email, file_path, upload_date) VALUES (?, ?, ?, ?)',
+                    (session['user_id'], patient_email, filename, upload_time))
+                
+                # Store filename in type so patient can download the exact file
+                notif_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                conn.execute(
+                    'INSERT INTO notifications (user_id, message, type, created_at) VALUES (?, ?, ?, ?)',
+                    (patient['id'],
+                     f'A new lab report "{report_file.filename}" has been uploaded and analyzed for you.',
+                     f'report_upload:{filename}',
+                     notif_time))
+                conn.commit()
+            conn.close()
+            
+            # Automatically analyze the report (simulated) - DONE OUTSIDE OF MAIN CONNECTION TO AVOID LOCKS
+            if patient:
+                age = patient['age'] if patient['age'] else 35
+                gender = 0 if patient['gender'] == 'male' else 1
+                report_data = simulate_report_data(age, gender, report_file.filename)
+                process_and_save_analysis(patient['id'], report_data)
+            
+            flash('Report uploaded successfully.', 'success')
         
-        # Automatically analyze the report (simulated) - DONE OUTSIDE OF MAIN CONNECTION TO AVOID LOCKS
-        if patient:
-            age = patient['age'] if patient['age'] else 35
-            gender = 0 if patient['gender'] == 'male' else 1
-            report_data = simulate_report_data(age, gender, report_file.filename)
-            process_and_save_analysis(patient['id'], report_data)
-        
-        flash('Report uploaded successfully.', 'success')
-    
-    return redirect(url_for('lab_assistant_dashboard'))
+        return redirect(url_for('lab_assistant_dashboard'))
+    except Exception as e:
+        return f"<h1>Upload Error:</h1><p>{str(e)}</p>"
 
 @app.route('/seed')
 def seed_db():
