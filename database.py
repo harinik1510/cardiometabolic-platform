@@ -141,6 +141,12 @@ def init_db():
         ) ENGINE=InnoDB;
         ''')
 
+        # Increase size of notifications type column to support long filenames
+        try:
+            cursor.execute('ALTER TABLE notifications MODIFY COLUMN type VARCHAR(255)')
+        except Exception as e:
+            print(f"Warning during ALTER TABLE: {e}")
+
         conn.commit()
         cursor.close()
         conn.close()
