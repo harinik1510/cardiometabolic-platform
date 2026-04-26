@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication | {{ role|capitalize }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <div class="container" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+        <div class="glass-card" style="width: 100%; max-width: 450px; padding: 3rem;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">{{ role|capitalize }} Portal</h2>
+                <p id="auth-subtitle">Welcome back! Please login to your account.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  {% if "Appointment request sent" not in message %}
+                    <div style="padding: 1rem; border-radius: 10px; margin-bottom: 1rem; background: {{ 'rgba(239, 68, 68, 0.1)' if category == 'danger' else 'rgba(16, 185, 129, 0.1)' }}; color: {{ '#ef4444' if category == 'danger' else '#10b981' }}; border: 1px solid {{ 'rgba(239, 68, 68, 0.2)' if category == 'danger' else 'rgba(16, 185, 129, 0.2)' }}; font-weight: 500;">
+                      {{ message }}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <!-- Login Form -->
+            <form id="login-form" action="{{ url_for('login') }}" method="POST">
+                <input type="hidden" name="role" value="{{ role }}">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-input" placeholder="name@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Login</button>
+            </form>
+
+            <!-- Register Form (Only for Patients) -->
+            {% if role == 'patient' %}
+            <form id="register-form" action="{{ url_for('register') }}" method="POST" style="display: none;">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="name" class="form-input" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-input" placeholder="name@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Create Account</button>
+            </form>
+
+            <div style="text-align: center; margin-top: 2rem; color: var(--text-dim);">
+                <p id="toggle-text">Don't have an account? <a href="#" onclick="toggleAuth(event)" style="color: var(--primary); font-weight: 600; text-decoration: none;">Register here</a></p>
+            </div>
+            {% endif %}
+
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <a href="{{ url_for('index') }}" style="color: var(--text-dim); text-decoration: none; font-size: 0.9rem;">← Back to Role Selection</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleAuth(e) {
+            e.preventDefault();
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const subtitle = document.getElementById('auth-subtitle');
+            const toggleText = document.getElementById('toggle-text');
+
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                subtitle.innerText = 'Welcome back! Please login to your account.';
+                toggleText.innerHTML = 'Don\'t have an account? <a href="#" onclick="toggleAuth(event)" style="color: var(--primary); font-weight: 600; text-decoration: none;">Register here</a>';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                subtitle.innerText = 'Join us today! Create your patient account.';
+                toggleText.innerHTML = 'Already have an account? <a href="#" onclick="toggleAuth(event)" style="color: var(--primary); font-weight: 600; text-decoration: none;">Login here</a>';
+            }
+        }
+    </script>
+</body>
+</html>

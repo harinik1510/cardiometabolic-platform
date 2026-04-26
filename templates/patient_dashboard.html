@@ -1,0 +1,229 @@
+{% extends "base_patient.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+    <div>
+        <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Hello, {{ patient_name if is_caretaker else
+            session['name'] }}</h1>
+        <p>{{ "Monitoring health status for " + patient_name if is_caretaker else "Welcome back! Let's check your health
+            status today." }}</p>
+    </div>
+</header>
+
+<div class="glass-card animate-fade-in" style="padding: 2.5rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-file-upload" style="color: var(--primary);"></i> Submit Health
+        Data</h3>
+
+    <div id="checkup-question" class="form-group">
+        <label style="font-size: 1.1rem;">Do you have a recent general health check-up report?</label>
+        <div style="display: flex; gap: 2rem; margin-top: 1rem;">
+            <button class="btn-secondary" onclick="toggleEntry('upload')">Yes, Upload Report</button>
+            <button class="btn-secondary" onclick="toggleEntry('manual')">No, Enter Manually</button>
+        </div>
+    </div>
+
+    <!-- Report Upload Section -->
+    <form id="upload-form" action="/patient/analyze" method="POST" enctype="multipart/form-data" style="display: none;">
+        {% if is_caretaker %}
+        <input type="hidden" name="managed_patient_id" value="{{ managed_patient_id }}">
+        {% endif %}
+        <div class="upload-section"
+            style="padding: 2rem; text-align: center; border: 2px dashed rgba(99, 102, 241, 0.3); border-radius: 20px; margin-bottom: 2rem; background: rgba(99, 102, 241, 0.02); transition: all 0.3s;">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <h4 style="color: var(--text-main);">Upload PDF or Image Report</h4>
+            <input type="file" name="report" id="report-file" style="display: none;" onchange="updateFileName()">
+            <button type="button" class="btn-secondary" style="margin-top: 1rem;"
+                onclick="document.getElementById('report-file').click()">Select File</button>
+            <p id="file-name" style="margin-top: 1rem; color: var(--accent); font-weight: 500;"></p>
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%;">Analyze Uploaded Report</button>
+    </form>
+
+    <!-- Manual Entry Section -->
+    <form id="manual-form" action="/patient/analyze" method="POST" style="display: none;">
+        {% if is_caretaker %}
+        <input type="hidden" name="managed_patient_id" value="{{ managed_patient_id }}">
+        {% endif %}
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+            <div class="form-group">
+                <label>Fasting Blood Sugar (mg/dL)</label>
+                <input type="number" name="fbs" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>HbA1c (%)</label>
+                <input type="number" step="0.1" name="hba1c" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Total Cholesterol (mg/dL)</label>
+                <input type="number" name="chol" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>LDL (mg/dL)</label>
+                <input type="number" name="ldl" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>HDL (mg/dL)</label>
+                <input type="number" name="hdl" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Triglycerides (mg/dL)</label>
+                <input type="number" name="trig" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Blood Pressure (e.g., 120/80)</label>
+                <input type="text" name="bp" class="form-input" placeholder="120/80" required>
+            </div>
+            <div class="form-group">
+                <label>BMI</label>
+                <input type="number" step="0.1" name="bmi" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Creatinine (mg/dL)</label>
+                <input type="number" step="0.01" name="creatinine" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>ECG Result</label>
+                <select name="ecg" class="form-input">
+                    <option value="normal">Normal</option>
+                    <option value="abnormal">Abnormal</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+            <h4 style="margin-bottom: 1.5rem; color: var(--primary);">Lifestyle & Gender Specifics</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="form-group">
+                    <label>Smoking Habit</label>
+                    <select name="smoking" class="form-input">
+                        <option value="never">Never</option>
+                        <option value="occasional">Occasional</option>
+                        <option value="regular">Regular</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Alcohol Consumption</label>
+                    <select name="alcohol" class="form-input">
+                        <option value="none">None</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="heavy">Heavy</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="female-questions" style="display: none; margin-top: 1rem;">
+                <div class="form-group">
+                    <label>Have you ever been diagnosed with PCOS?</label>
+                    <select name="pcos" class="form-input">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                        <option value="not_sure">Not sure</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Did you have gestational diabetes during pregnancy?</label>
+                    <select name="gestational_diabetes" class="form-input">
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                        <option value="n_a">Not applicable</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 2rem;">Submit for Analysis</button>
+    </form>
+</div>
+
+
+{% if latest_report %}
+<!-- Latest Health Status Section -->
+<div class="glass-card animate-fade-in"
+    style="padding: 2.5rem; margin-bottom: 2rem; border-left: 5px solid {{ '#ef4444' if latest_report.risk_level == 'High Risk' else '#f59e0b' if latest_report.risk_level == 'Moderate Risk' else '#10b981' }};">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h3 style="margin: 0;"><i class="fas fa-heartbeat" style="color: var(--primary);"></i> Latest Health Status</h3>
+        <span style="font-size: 0.85rem; color: var(--text-dim); font-weight: 500;">
+            <i class="far fa-clock"></i> Last Analyzed: <span class="utc-time"
+                data-utc="{{ latest_report.report_date }}">{{ latest_report.report_date }}</span>
+        </span>
+    </div>
+
+    <div style="text-align: center; max-width: 500px; margin: 0 auto;">
+        <p
+            style="font-size: 0.9rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 1.5rem; letter-spacing: 1px; font-weight: 600;">
+            Current Risk Level</p>
+
+        <!-- Speedometer Gauge -->
+        <div style="position: relative; width: 240px; height: 140px; margin: 0 auto 1rem;">
+            <svg width="240" height="140" viewBox="0 0 240 140">
+                <defs>
+                    <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#10b981" />
+                        <stop offset="50%" stop-color="#f59e0b" />
+                        <stop offset="100%" stop-color="#ef4444" />
+                    </linearGradient>
+                </defs>
+                <!-- Background Track -->
+                <path d="M30 120 A90 90 0 0 1 210 120" fill="none" stroke="rgba(0,0,0,0.04)" stroke-width="18"
+                    stroke-linecap="round" />
+                <!-- Colored Track -->
+                {% set risk_percent = 90 if latest_report.risk_level == 'High Risk' else 50 if latest_report.risk_level
+                == 'Moderate Risk' else 15 %}
+                <path d="M30 120 A90 90 0 0 1 210 120" fill="none" stroke="url(#gauge-gradient)" stroke-width="18"
+                    stroke-linecap="round"
+                    style="stroke-dasharray: 282.7; stroke-dashoffset: {{ 282.7 * (1 - risk_percent / 100) }}; transition: stroke-dashoffset 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);" />
+            </svg>
+            <!-- Needle -->
+            <div
+                style="position: absolute; bottom: 20px; left: 120px; width: 4px; height: 80px; background: #1e293b; border-radius: 4px; transform-origin: bottom center; transform: translateX(-50%) rotate({{ -90 + risk_percent * 1.8 }}deg); transition: transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                <div
+                    style="position: absolute; bottom: -5px; left: -3px; width: 10px; height: 10px; background: #1e293b; border-radius: 50%;">
+                </div>
+            </div>
+        </div>
+
+        <h2
+            style="font-size: 2.4rem; color: {{ '#ef4444' if latest_report.risk_level == 'High Risk' else '#f59e0b' if latest_report.risk_level == 'Moderate Risk' else '#10b981' }}; margin-bottom: 1.5rem; font-weight: 800;">
+            {{ latest_report.risk_level }}
+        </h2>
+
+        <div
+            style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 40px;">
+            <span style="color: #10b981;">Low</span>
+            <span style="color: #f59e0b;">Moderate</span>
+            <span style="color: #ef4444;">High</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleEntry(type) {
+        document.getElementById('checkup-question').style.display = 'none';
+        if (type === 'upload') {
+            document.getElementById('upload-form').style.display = 'block';
+            document.getElementById('manual-form').style.display = 'none';
+        } else {
+            document.getElementById('upload-form').style.display = 'none';
+            document.getElementById('manual-form').style.display = 'block';
+
+            const gender = "{{ session.get('gender', 'male') }}";
+            if (gender === 'female') {
+                document.getElementById('female-questions').style.display = 'block';
+            }
+        }
+    }
+
+    function updateFileName() {
+        const input = document.getElementById('report-file');
+        const nameDisplay = document.getElementById('file-name');
+        nameDisplay.innerText = input.files[0] ? "Selected: " + input.files[0].name : "";
+    }
+</script>
+{% endblock %}

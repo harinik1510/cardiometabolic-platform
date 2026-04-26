@@ -1,0 +1,157 @@
+{% extends "base_patient.html" %}
+
+{% block title %}Analysis Results{% endblock %}
+
+{% block extra_css %}
+    .result-badge {
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .risk-high {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid #ef4444;
+    }
+    .risk-moderate {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+        border: 1px solid #f59e0b;
+    }
+    .risk-low {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border: 1px solid #10b981;
+    }
+    .metric-card {
+        padding: 1.5rem;
+        text-align: center;
+    }
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0.5rem 0;
+    }
+    .metric-label {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3.5rem;">
+        <div>
+            {% if is_caretaker %}
+            <h1 style="font-size: 2.8rem; margin-bottom: 0.5rem;">Report for {{ patient_name }}</h1>
+            <p>Detailed cardiometabolic health analysis for your patient.</p>
+            {% else %}
+            <h1 style="font-size: 2.8rem; margin-bottom: 0.5rem;">Your Health Analysis</h1>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Risk Predictions -->
+        <div class="glass-card" style="padding: 2rem;">
+            <div style="text-align: center; margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--glass-border);">
+                <h2 style="font-size: 3.5rem; color: {{ '#ef4444' if results.final_raw == 2 else '#f59e0b' if results.final_raw == 1 else '#10b981' }}; margin: 0;">
+                    {{ results.final_prediction }}
+                </h2>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h4 style="color: var(--text-dim); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 1rem;">
+                    <i class="fas fa-notes-medical"></i> Predicted Diseases
+                </h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.8rem;">
+                    {% for disease in results.predicted_diseases %}
+                    <span style="background: rgba(99, 102, 241, 0.1); color: var(--primary); padding: 8px 16px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; border: 1px solid rgba(99, 102, 241, 0.2);">
+                        {{ disease }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Graphical View -->
+        <div class="glass-card" style="padding: 2rem; display: flex; flex-direction: column; align-items: center;">
+            <h3 style="margin-bottom: 1.5rem; width: 100%;"><i class="fas fa-chart-pie" style="color: var(--secondary);"></i> Risk Factor Contribution</h3>
+            <div style="width: 100%; max-width: 280px;">
+                <canvas id="analysisPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('analysisPieChart').getContext('2d');
+    const contributors = {{ results.risk_contributors | tojson }};
+    const rawData = {{ data | tojson }};
+
+    // Define labels for core factors
+    const labelMapping = {
+        'Glucose': rawData.fbs + ' mg/dL',
+        'Blood Pressure': rawData.sys_bp + '/' + rawData.dia_bp + ' mmHg',
+        'BMI': rawData.bmi,
+        'Cholesterol': rawData.chol + ' mg/dL',
+        'Lifestyle/Age': 'Age ' + rawData.age
+    };
+
+    const labels = Object.keys(contributors).map(key => key + ' (' + labelMapping[key] + ')');
+    const dataValues = Object.values(contributors);
+    const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#64748b'];
+
+    // Detail map for tooltips
+    const labelToDetailMap = {
+        'Glucose': 'HbA1c: ' + rawData.hba1c + '%',
+        'Blood Pressure': 'Systolic: ' + rawData.sys_bp + ', Diastolic: ' + rawData.dia_bp,
+        'BMI': 'Body Mass Index',
+        'Cholesterol': 'LDL: ' + rawData.ldl + ', Total: ' + rawData.chol,
+        'Lifestyle/Age': 'Age, Smoking & Alcohol Factors'
+    };
+
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: dataValues,
+                backgroundColor: colors,
+                borderWidth: 0,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#1e293b',
+                        padding: 20,
+                        font: { size: 12, weight: '500' }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.label || '';
+                            if (label) label += ': ';
+                            // Find the base category to look up details
+                            const category = context.label.split(' (')[0];
+                            label += labelToDetailMap[category] || '';
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base_patient.html" %}
+
+{% block title %}Lifestyle Advice{% endblock %}
+
+{% block extra_css %}
+    .advice-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    .category-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    .category-header i {
+        font-size: 1.5rem;
+        color: var(--primary);
+    }
+    .advice-list {
+        list-style: none;
+        padding: 0;
+    }
+    .advice-item {
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+        line-height: 1.5;
+        font-size: 0.95rem;
+    }
+    .advice-item i {
+        color: var(--accent);
+        margin-top: 4px;
+    }
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+        <div>
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Lifestyle & Prevention</h1>
+        </div>
+    </div>
+
+    <div class="advice-grid">
+        <!-- Nutrition & Diet -->
+        <div class="glass-card" style="padding: 1.5rem;">
+            <div class="category-header">
+                <i class="fas fa-apple-alt"></i>
+                <h3 style="margin: 0; font-size: 1.1rem;">Nutrition & Diet</h3>
+            </div>
+            <ul class="advice-list">
+                {% if risk == 2 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Strict Keto/Paleo:</strong> Minimize all simple carbs.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Zero Added Sugar:</strong> Completely eliminate processed sweeteners.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>High Fiber:</strong> At least 35g of fiber daily from vegetables.</span></li>
+                {% elif risk == 1 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Low Carb:</strong> Limit grains and bread to one serving/day.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Natural Sugars:</strong> Switch from soda to whole fruits.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Healthy Fats:</strong> Use olive oil instead of butter.</span></li>
+                {% else %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Balanced Diet:</strong> Follow a standard Mediterranean diet.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Mindful Eating:</strong> Avoid overeating and late-night snacks.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Hydration:</strong> Drink 2L of water daily.</span></li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Physical Activity -->
+        <div class="glass-card" style="padding: 1.5rem;">
+            <div class="category-header">
+                <i class="fas fa-running"></i>
+                <h3 style="margin: 0; font-size: 1.1rem;">Physical Activity</h3>
+            </div>
+            <ul class="advice-list">
+                {% if risk == 2 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Daily Aerobic:</strong> 45-60 mins of brisk walking daily.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Supervised Training:</strong> Recommended for BP management.</span></li>
+                {% elif risk == 1 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Moderate Active:</strong> 150 mins of cycling/walking weekly.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Strength:</strong> 2 days of bodyweight exercises.</span></li>
+                {% else %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Maintain:</strong> Continue regular gym/sports activities.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>10k Steps:</strong> Aim for consistent daily step counts.</span></li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Monitoring & Medical -->
+        <div class="glass-card" style="padding: 1.5rem;">
+            <div class="category-header">
+                <i class="fas fa-stethoscope"></i>
+                <h3 style="margin: 0; font-size: 1.1rem;">Monitoring</h3>
+            </div>
+            <ul class="advice-list">
+                {% if risk == 2 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Bi-Weekly Checks:</strong> HbA1c and Lipid tests every 3 months.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Daily BP Logs:</strong> Monitor and record mornings/evenings.</span></li>
+                {% elif risk == 1 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Bi-Annual Checks:</strong> Standard blood work every 6 months.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Weekly BP:</strong> Check at least once a week.</span></li>
+                {% else %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Annual Physical:</strong> Full checkup once a year.</span></li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Stress & Sleep -->
+        <div class="glass-card" style="padding: 1.5rem;">
+            <div class="category-header">
+                <i class="fas fa-moon"></i>
+                <h3 style="margin: 0; font-size: 1.1rem;">Stress & Sleep</h3>
+            </div>
+            <ul class="advice-list">
+                {% if risk == 2 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Deep Sleep:</strong> Use sleep tracking; aim for 8+ hours.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Coping Mechanisms:</strong> Professional therapy or daily meditation.</span></li>
+                {% elif risk == 1 %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Digital Detox:</strong> No screens 1 hour before bed.</span></li>
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Relaxation:</strong> Evening walks or reading to de-stress.</span></li>
+                {% else %}
+                <li class="advice-item" style="font-size: 0.85rem;"><i class="fas fa-check-circle"></i><span><strong>Consistency:</strong> Maintain regular sleep/wake cycles.</span></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

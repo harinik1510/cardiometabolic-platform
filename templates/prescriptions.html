@@ -1,0 +1,197 @@
+{% extends "base_patient.html" %}
+
+{% block title %}My Prescriptions{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+    <div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Digital Prescriptions</h1>
+        <p>Access and download prescriptions from your recent consultations.</p>
+    </div>
+</div>
+
+<div class="glass-card" style="padding: 2.5rem;">
+    {% if prescriptions %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+        {% for presc in prescriptions %}
+        <div class="glass-card animate-fade-in" style="padding: 2rem; border: 1px solid var(--glass-border);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                <div>
+                    <h4 style="font-size: 1.2rem; color: var(--primary);"> {{ presc.doctor_name }}</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-dim);">Consulted on {{ presc.appointment_date }}</p>
+                </div>
+                <i class="fas fa-file-prescription" style="font-size: 2rem; color: var(--secondary);"></i>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <p style="font-size: 0.9rem; color: var(--text-dim);">
+                    <i class="fas fa-info-circle"></i> View or download your clinical summary and medications.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                {% if presc.prescription_path.endswith('.pdf') %}
+                <a href="{{ url_for('download_lab_report', filename=presc.prescription_path) }}" class="btn-primary"
+                    style="flex: 1; font-size: 0.9rem; text-align: center; text-decoration: none;">
+                    <i class="fas fa-download"></i> Download PDF
+                </a>
+                {% else %}
+                <button class="btn-primary" style="flex: 1; font-size: 0.9rem;" 
+                    data-doctor="{{ presc.doctor_name }}"
+                    data-date="{{ presc.appointment_date }}" 
+                    data-content="{{ presc.prescription_text }}"
+                    onclick="generatePDFDirectly(this)">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 4rem;">
+        <i class="fas fa-pills" style="font-size: 4rem; color: var(--text-dim); margin-bottom: 2rem;"></i>
+        <h3>No prescriptions found.</h3>
+        <p>Attend a consultation to receive your digital prescription.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- View Prescription Modal -->
+<div id="prescriptionModal" class="modal"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="glass-card animate-scale-in" style="width: 90%; max-width: 600px; padding: 3rem; position: relative;">
+        <button onclick="closeModal()"
+            style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-dim); cursor: pointer;">&times;</button>
+        <div id="modalContent"
+            style="background: white; padding: 2.5rem; border-radius: 12px; min-height: 400px; font-family: 'Inter', sans-serif; line-height: 1.6; color: #1e293b; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+            <!-- Prescription Header -->
+            <div
+                style="border-bottom: 2px solid var(--primary); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <h2 id="modalDoctorTitle" style="color: var(--primary); margin: 0;"></h2>
+                    <p id="modalDate" style="font-size: 0.9rem; color: #64748b; margin-top: 0.25rem;"></p>
+                </div>
+                <div style="text-align: right;">
+                    <h4 style="margin: 0; color: #1e293b;">CardioMetabolic</h4>
+                    <p style="font-size: 0.8rem; color: #64748b;">Certified Digital Report</p>
+                </div>
+            </div>
+
+            <!-- Patient Info Section -->
+            <div style="margin-bottom: 2rem; font-size: 0.95rem;">
+                <p><strong>Patient Name:</strong> {{ session['name'] }}</p>
+                <p><strong>Health Profile:</strong> <span style="text-transform: capitalize;">{{ session['gender']
+                        }}</span></p>
+            </div>
+
+            <!-- Clinical Analysis Section -->
+            <div style="margin-bottom: 2rem;">
+                <h4
+                    style="border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1rem; color: var(--primary);">
+                    <i class="fas fa-microscope"></i> Clinical Analysis & AI Risks
+                </h4>
+                <div id="modalAIRecs" style="font-size: 0.9rem; color: #334155; white-space: pre-wrap;"></div>
+            </div>
+
+            <!-- Doctor Notes Section -->
+            <div style="margin-bottom: 3rem;">
+                <h4
+                    style="border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem; font-size: 1rem; color: var(--primary);">
+                    <i class="fas fa-notes-medical"></i> Doctor's Clinical Notes
+                </h4>
+                <div id="modalDoctorNotes"
+                    style="font-size: 1rem; color: #1e293b; font-weight: 500; white-space: pre-wrap;"></div>
+            </div>
+
+            <!-- Signature -->
+            <div style="text-align: right; margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                <p style="margin: 0; font-family: 'Dancing Script', cursive; font-size: 1.2rem; color: var(--primary);">
+                    Digitally Signed</p>
+                <p id="modalSignatureName" style="margin: 0; font-weight: 600; font-size: 0.9rem;"></p>
+            </div>
+        </div>
+        <div style="margin-top: 2rem; text-align: center; display: flex; gap: 1rem; justify-content: center;">
+            <button class="btn-primary" onclick="downloadPrescriptionPDF()">
+                <i class="fas fa-file-pdf"></i> Download as PDF
+            </button>
+            <button class="btn-secondary" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap');
+</style>
+
+<script>
+    function openPrescriptionModal(btn) {
+        populateModalData(btn);
+        document.getElementById('prescriptionModal').style.display = 'flex';
+    }
+
+    function generatePDFDirectly(btn) {
+        populateModalData(btn);
+        downloadPrescriptionPDF();
+    }
+
+    function populateModalData(btn) {
+        const doctor = btn.getAttribute('data-doctor');
+        const date = btn.getAttribute('data-date');
+        const fullContent = btn.getAttribute('data-content');
+
+        const displayDoctor = doctor.startsWith('Dr.') ? doctor : 'Dr. ' + doctor;
+        document.getElementById('modalDoctorTitle').innerText = displayDoctor;
+        document.getElementById('modalSignatureName').innerText = displayDoctor;
+        document.getElementById('modalDate').innerText = 'Date: ' + date;
+
+        // Split content between AI and Doctor notes
+        const separator = "--- DOCTOR'S CLINICAL NOTES ---";
+        let aiPart = "";
+        let doctorPart = "";
+
+        if (fullContent && fullContent.includes(separator)) {
+            const parts = fullContent.split(separator);
+            aiPart = parts[0].trim();
+            doctorPart = parts[1].trim();
+        } else {
+            // Fallback for older prescriptions or if format differs
+            doctorPart = fullContent || "No clinical notes provided.";
+            aiPart = "Clinical preventive protocols applicable based on reported biomarkers.";
+        }
+
+        document.getElementById('modalAIRecs').innerText = aiPart;
+        document.getElementById('modalDoctorNotes').innerText = doctorPart;
+    }
+
+    function closeModal() {
+        document.getElementById('prescriptionModal').style.display = 'none';
+    }
+
+    function downloadPrescriptionPDF() {
+        const element = document.getElementById('modalContent');
+        const doctorName = document.getElementById('modalDoctorTitle').innerText.replace('Dr. ', '');
+        const date = document.getElementById('modalDate').innerText.replace('Date: ', '');
+
+        const opt = {
+            margin: [0.5, 0.5],
+            filename: `Prescription_${doctorName}_${date}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        // New Promise-based usage:
+        html2pdf().set(opt).from(element).save();
+    }
+
+    window.onclick = function (event) {
+        const modal = document.getElementById('prescriptionModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
+{% endblock %}

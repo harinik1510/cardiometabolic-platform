@@ -1,0 +1,79 @@
+{% extends "base_patient.html" %}
+
+{% block title %}Your Profile{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+    <div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">User Profile</h1>
+        <p>Manage your personal information and preferences.</p>
+    </div>
+</div>
+
+<div class="glass-card animate-fade-in" style="padding: 3rem; max-width: 800px;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div
+        style="padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); font-weight: 500;">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('patient_profile') }}" method="POST">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" class="form-input" value="{{ user.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" class="form-input" value="{{ user.email }}" disabled style="opacity: 0.6;">
+            </div>
+            <div class="form-group">
+                <label>Age</label>
+                <input type="number" name="age" class="form-input" value="{{ user.age }}" required>
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select name="gender" class="form-input">
+                    <option value="male" {% if user.gender=='male' %}selected{% endif %}>Male</option>
+                    <option value="female" {% if user.gender=='female' %}selected{% endif %}>Female</option>
+                    <option value="other" {% if user.gender=='other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>City</label>
+                <input type="text" name="city" class="form-input" value="{{ user.city }}" required>
+            </div>
+            <div class="form-group">
+                <label>Pincode</label>
+                <input type="text" name="pincode" class="form-input" value="{{ user.pincode }}" required
+                    pattern="[0-9]{6}">
+            </div>
+        </div>
+
+        <!-- Caretaker Section -->
+        <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem; margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--primary);">Caretaker Information</h4>
+            <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">
+                If you have a caretaker, enter their details below.
+            </p>
+            <div class="form-group">
+                <label>Caretaker's Name</label>
+                <input type="text" name="caretaker_name" class="form-input"
+                    value="{{ caretaker.name if caretaker else '' }}" placeholder="Enter caretaker's full name">
+            </div>
+            <div class="form-group">
+                <label>Caretaker's Email</label>
+                <input type="email" name="caretaker_email" class="form-input"
+                    value="{{ caretaker.email if caretaker else '' }}" placeholder="Enter caretaker's email address">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 2rem;">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

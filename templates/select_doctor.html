@@ -1,0 +1,146 @@
+{% extends "base_patient.html" %}
+
+{% block title %}Select Doctor{% endblock %}
+
+{% block extra_css %}
+    .doctor-card {
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .doctor-info {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+    .doctor-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+    }
+    .doctor-meta {
+        display: flex;
+        gap: 1rem;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+        <div>
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Find a Specialist</h1>
+            <p>Consult with the best cardiologists and diabetologists in <strong>{{ pincode }}</strong>.</p>
+        </div>
+    </div>
+
+    <!-- Top Search Section -->
+    <div class="glass-card" style="padding: 2.5rem; margin-bottom: 3rem;">
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <div style="font-size: 3rem; color: var(--primary);"><i class="fas fa-map-marker-alt"></i></div>
+            <div>
+                <h3>Doctors in your area</h3>
+                <p>We've found specialized doctors near pincode <strong>{{ pincode }}</strong>. Select a doctor to book a consultation.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Results -->
+    <div id="doctor-list">
+        {% if doctors %}
+            <h3 style="margin-bottom: 2rem; color: var(--primary);">Suggested Doctors (Pincode: {{ pincode }})</h3>
+            {% for doc in doctors %}
+                <div class="glass-card doctor-card">
+                    <div class="doctor-info">
+                        <div class="doctor-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div>
+                            <h4 style="font-size: 1.25rem;">{{ doc.name }}</h4>
+                            <p style="color: var(--primary); font-weight: 500;">{{ doc.specialization }}</p>
+                            <div class="doctor-meta">
+                                <span><i class="fas fa-briefcase"></i> {{ doc.experience }} years</span>
+                                <span><i class="fas fa-tag"></i> ₹{{ doc.fees }}</span>
+                                <span><i class="fas fa-phone"></i> {{ doc.phone }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-primary" onclick="openScheduleModal('{{ doc.id }}', '{{ doc.name }}')">Schedule Appointment</button>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="glass-card" style="padding: 3rem; text-align: center;">
+                <i class="fas fa-search-location" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 1.5rem;"></i>
+                <h3>No doctors found in your area.</h3>
+                <p>We couldn't find any doctors registered in pincode <strong>{{ pincode }}</strong>.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Schedule Modal -->
+<div id="schedule-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="glass-card animate-scale-in" style="width: 100%; max-width: 500px; padding: 3rem; position: relative;">
+        <button onclick="closeModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; color: var(--text-main); cursor: pointer; font-size: 1.2rem;">&times;</button>
+        <h3 style="margin-bottom: 0.5rem;">Schedule with <span id="modal-doc-name" style="color: var(--primary);"></span></h3>
+        <p style="margin-bottom: 2rem; font-size: 0.9rem;">Appointments must be scheduled at least 1 day in advance.</p>
+        
+        <form action="{{ url_for('book_appointment') }}" method="POST">
+            <input type="hidden" name="doctor_id" id="modal-doc-id">
+            <div class="form-group">
+                <label>Symptoms / Reason for Consultation</label>
+                <textarea name="symptoms" class="form-input" rows="3" placeholder="Describe your symptoms (e.g. fatigue, high blood pressure...)" required></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Select Date</label>
+                    <input type="date" name="date" class="form-input" required id="appointment-date">
+                </div>
+                <div class="form-group">
+                    <label>Select Time</label>
+                    <input type="time" name="time" class="form-input" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Confirm & Send Request</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openScheduleModal(id, name) {
+        document.getElementById('modal-doc-id').value = id;
+        document.getElementById('modal-doc-name').innerText = name;
+        document.getElementById('schedule-modal').style.display = 'flex';
+        
+        // Set min date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('appointment-date').min = tomorrow.toISOString().split('T')[0];
+    }
+
+    function closeModal() {
+        document.getElementById('schedule-modal').style.display = 'none';
+    }
+
+    // Close on outside click
+    window.onclick = function(event) {
+        const modal = document.getElementById('schedule-modal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+</script>
+{% endblock %}
+

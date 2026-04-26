@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Reports | CardioMetabolic AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container animate-fade-in" style="padding-top: 4rem; padding-bottom: 4rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+            <div>
+                <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Reports for {{ patient_name }}</h1>
+                <p>Access all lab reports uploaded for this patient.</p>
+            </div>
+            <a href="{{ url_for('doctor_dashboard', section='patients') }}" class="btn-secondary">← Back to Patient List</a>
+        </div>
+
+        <div class="glass-card" style="padding: 2.5rem;">
+            {% if reports %}
+                {% for report in reports %}
+                <div class="glass-card animate-fade-in" style="padding: 1.5rem; margin-bottom: 1rem;
+                     border: 1px solid var(--glass-border);
+                     display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; gap: 1.2rem; align-items: center;">
+                        <i class="fas fa-file-pdf" style="font-size: 2rem; color: #ef4444;"></i>
+                        <div>
+                            <p style="font-weight: 500;">{{ report.file_path }}</p>
+                            <p style="font-size: 0.8rem; color: var(--text-dim);">Uploaded: {{ report.upload_date }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('download_lab_report', filename=report.file_path) }}"
+                       class="btn-primary" style="padding: 8px 20px; font-size: 0.9rem;">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 3rem;">
+                    <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 1.5rem;"></i>
+                    <p>No reports found for this patient.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

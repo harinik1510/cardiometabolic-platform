@@ -1,0 +1,115 @@
+{% extends "base_patient.html" %}
+
+{% block title %}My Appointments{% endblock %}
+
+{% block extra_css %}
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .badge-pending {
+        background: rgba(234, 179, 8, 0.2);
+        color: #eab308;
+        border: 1px solid rgba(234, 179, 8, 0.4);
+    }
+
+    .badge-accepted {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-rejected {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .badge-completed {
+        background: rgba(99, 102, 241, 0.2);
+        color: #818cf8;
+        border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+    <div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">My Appointments</h1>
+        <p>All your scheduled, pending, and past consultations.</p>
+    </div>
+</div>
+
+{% if appointments %}
+<div style="display: flex; flex-direction: column; gap: 1.2rem;">
+    {% for appt in appointments %}
+    <div class="glass-card animate-fade-in"
+        style="padding: 1.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div
+                style="width: 52px; height: 52px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; color: white;">
+                <i class="fas fa-user-md"></i>
+            </div>
+            <div>
+                <h4 style="font-size: 1.1rem; margin-bottom: 0.2rem;"> {{ appt.doctor_name }}</h4>
+                <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.3rem;">
+                    <i class="fas fa-stethoscope"></i> {{ appt.specialization or 'Specialist' }}
+                    {% if appt.doctor_phone %}
+                    &nbsp;|&nbsp; <i class="fas fa-phone"></i> {{ appt.doctor_phone }}
+                    {% endif %}
+                </p>
+                <p style="font-size: 0.9rem;">
+                    <i class="fas fa-calendar" style="color: var(--primary);"></i>
+                    {{ appt.appointment_date }} &nbsp;
+                    <i class="fas fa-clock" style="color: var(--primary);"></i>
+                    {{ appt.appointment_time }}
+                </p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span class="status-badge badge-{{ appt.status }}">
+                {% if appt.status == 'pending' %}<i class="fas fa-hourglass-half"></i>
+                {% elif appt.status == 'accepted' %}<i class="fas fa-check-circle"></i>
+                {% elif appt.status == 'rejected' %}<i class="fas fa-times-circle"></i>
+                {% elif appt.status == 'completed' %}<i class="fas fa-check-double"></i>
+                {% endif %}
+                {{ appt.status | capitalize }}
+            </span>
+            
+            {% if appt.status == 'accepted' %}
+            <button class="btn-primary start-consult-btn" onclick="window.location.href='/consultation/{{ appt.id }}'">
+                <i class="fas fa-video"></i> Join Consultation
+            </button>
+            {% elif appt.status == 'pending' %}
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                <button class="btn-secondary" disabled style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="fas fa-video"></i> Join Consultation
+                </button>
+                <span style="font-size: 0.75rem; color: var(--text-dim);"><i class="fas fa-info-circle"></i> Enabled after doctor approval</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="glass-card" style="padding: 4rem; text-align: center;">
+    <i class="fas fa-calendar-times" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 1.5rem;"></i>
+    <p style="font-size: 1.1rem;">You have no appointments yet.</p>
+    <a href="{{ url_for('select_doctor') }}" class="btn-primary" style="margin-top: 1.5rem; display: inline-block;">
+        <i class="fas fa-search"></i> Find a Doctor
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+</script>
+{% endblock %}

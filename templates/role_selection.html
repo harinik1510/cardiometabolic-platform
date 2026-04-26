@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Selection | Cardiometabolic Health Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container hero animate-fade-in">
+        <h1>Welcome to CardioMetabolic AI</h1>
+        <p>Predicting risk levels and managing heart health with advanced machine learning. Select your role to get started.</p>
+        
+        <div class="role-grid">
+            <a href="{{ url_for('auth', role='patient') }}" class="glass-card role-card" style="text-decoration: none; color: inherit;">
+                <div class="role-icon"><i class="fas fa-user-injured"></i></div>
+                <h3>Patient</h3>
+                <p>Track your health, analyze reports, and consult specialists.</p>
+            </a>
+            
+            <a href="{{ url_for('auth', role='doctor') }}" class="glass-card role-card" style="text-decoration: none; color: inherit;">
+                <div class="role-icon"><i class="fas fa-user-md"></i></div>
+                <h3>Doctor</h3>
+                <p>Manage appointments, view patient data, and provide care.</p>
+            </a>
+            
+            <a href="{{ url_for('auth', role='caretaker') }}" class="glass-card role-card" style="text-decoration: none; color: inherit;">
+                <div class="role-icon"><i class="fas fa-hands-helping"></i></div>
+                <h3>Caretaker</h3>
+                <p>Monitor the health and progress of your loved ones.</p>
+            </a>
+            
+            <a href="{{ url_for('auth', role='lab_assistant') }}" class="glass-card role-card" style="text-decoration: none; color: inherit;">
+                <div class="role-icon"><i class="fas fa-flask"></i></div>
+                <h3>Lab Assistant</h3>
+                <p>Securely upload patient reports for analysis.</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

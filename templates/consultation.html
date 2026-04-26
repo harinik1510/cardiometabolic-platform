@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation | CardioMetabolic AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .video-container {
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 2rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .call-controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .control-btn.end {
+            background: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container animate-fade-in" style="padding-top: 3rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+                <h2 style="font-size: 1.8rem;">Consultation: {{ patient.name }}</h2>
+                <p style="color: var(--accent);"><i class="fas fa-circle"
+                        style="font-size: 0.7rem; vertical-align: middle;"></i> Live Consultation Session</p>
+            </div>
+            <div class="glass-card" style="padding: 8px 16px; color: var(--text-dim);">
+                <i class="fas fa-microphone"></i> Recording...
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: {{ '1.5fr 1fr' if role == 'doctor' else '1fr' }}; gap: 2rem;">
+            <!-- Call Section -->
+            <div>
+                <div class="video-container" id="jitsi-container">
+                    <!-- Jitsi will be injected here -->
+                </div>
+
+                <div class="glass-card" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem;">Patient Clinical Data</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.9rem;">
+                        <div style="padding: 10px; background: rgba(99, 102, 241, 0.05); border-radius: 8px;">
+                            <span style="color: var(--text-dim);">Risk Level:</span>
+                            <strong style="color: var(--primary);">{{ risk_level or 'Moderate' }}</strong>
+                        </div>
+                        <div style="padding: 10px; background: rgba(99, 102, 241, 0.05); border-radius: 8px;">
+                            <span style="color: var(--text-dim);">Symptoms:</span> {{ symptoms or 'Not provided' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if role == 'doctor' %}
+            <!-- Real-time Prescription (Doctor Only) -->
+            <div class="glass-card" style="padding: 2.5rem; display: flex; flex-direction: column;">
+                <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-file-signature" style="color: var(--primary);"></i>
+                    Digital Prescription</h3>
+
+                <form id="prescription-form" action="{{ url_for('save_prescription') }}" method="POST"
+                    enctype="multipart/form-data">
+                    <input type="hidden" name="appointment_id" value="{{ appointment_id }}">
+                    <input type="hidden" name="auto_rec" value="{{ auto_rec }}">
+
+                    <div class="form-group">
+                        <label>AI-Generated Recommendations</label>
+                        <div
+                            style="background: rgba(99, 102, 241, 0.05); padding: 1.5rem; border-radius: 12px; font-size: 0.85rem; color: var(--text-main); white-space: pre-wrap; border: 1px solid var(--glass-border);">
+                            {{ auto_rec }}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Doctor's Additional Notes & Medications</label>
+                        <textarea name="doctor_notes" class="form-input" rows="8"
+                            placeholder="Enter additional medications, dosages, or specific clinical advice here..."
+                            required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Follow-up Date</label>
+                        <input type="date" name="follow_up" class="form-input">
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Finalize & Send to
+                        Patient</button>
+                </form>
+            </div>
+            {% else %}
+            <!-- Exit button for patient -->
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="{{ url_for('patient_dashboard') }}" class="btn-secondary">Leave Consultation</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="https://meet.jit.si/external_api.js"></script>
+    <script>
+        const domain = "meet.jit.si";
+        const options = {
+            roomName: "{{ room_name }}",
+            width: '100%',
+            height: '100%',
+            parentNode: document.querySelector('#jitsi-container'),
+            userInfo: {
+                displayName: "{{ session['name'] }}"
+            },
+            interfaceConfigOverwrite: {
+                TOOLBAR_BUTTONS: [
+                    'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+                    'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+                    'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+                    'videoquality', 'filmstrip', 'invite', 'feedback', 'stats', 'shortcuts',
+                    'tileview', 'videobackgroundblur', 'download', 'help', 'mute-everyone'
+                ],
+                SETTINGS_SECTIONS: ['devices', 'language', 'moderator', 'profile', 'calendar'],
+            }
+        };
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        api.addEventListeners({
+            readyToClose: function () {
+                window.location.href = "{{ url_for('doctor_dashboard' if role == 'doctor' else 'patient_dashboard') }}";
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caretaker Dashboard | CardioMetabolic AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container animate-fade-in" style="padding-top: 4rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+            <div>
+                <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Caretaker Portal</h1>
+                <p>Monitoring the health and progress of your assigned patients.</p>
+            </div>
+            <a href="{{ url_for('logout') }}" class="btn-secondary" style="color: #ef4444;">Logout</a>
+        </div>
+
+        <div class="glass-card" style="padding: 2.5rem;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; background: {{ 'rgba(239, 68, 68, 0.1)' if category == 'danger' else 'rgba(16, 185, 129, 0.1)' }}; color: {{ '#ef4444' if category == 'danger' else '#10b981' }}; border: 1px solid {{ 'rgba(239, 68, 68, 0.2)' if category == 'danger' else 'rgba(16, 185, 129, 0.2)' }}; font-weight: 500; display: flex; align-items: center; gap: 1rem;">
+                    <i class="fas {{ 'fa-exclamation-circle' if category == 'danger' else 'fa-check-circle' }}"></i>
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <h3 style="margin-bottom: 2rem; color: var(--primary);">Managed Patients</h3>
+            
+            {% if patients %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                    {% for patient in patients %}
+                        <div class="glass-card" style="padding: 1.5rem; border: 1px solid var(--glass-border);">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                                <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white;">
+                                    <i class="fas fa-user-injured"></i>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 1.1rem;">{{ patient.name }}</h4>
+                                    <p style="font-size: 0.85rem; color: var(--text-dim);">{{ patient.email }}</p>
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 1.5rem; font-size: 0.9rem;">
+                                <p><i class="fas fa-id-card"></i> Age: {{ patient.age }}</p>
+                                <p><i class="fas fa-venus-mars"></i> Gender: {{ patient.gender }}</p>
+                            </div>
+                            <a href="{{ url_for('caretaker_view_patient', patient_id=patient.id) }}" 
+                               class="btn-secondary" style="width: 100%; text-align: center; text-decoration: none; display: block;">
+                                View Patient Dashboard
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem;">
+                    <i class="fas fa-user-clock" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 1.5rem;"></i>
+                    <p>You haven't been assigned any patients yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

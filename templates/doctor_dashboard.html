@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard | CardioMetabolic AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 12px 16px;
+            color: var(--text-dim);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            background: var(--primary);
+            color: white !important;
+            border: 1px solid var(--primary);
+        }
+
+        .dashboard-container {
+            display: flex;
+        }
+
+        .content-area {
+            flex: 1;
+            margin-left: 280px;
+            padding: 3rem;
+            min-height: 100vh;
+        }
+
+        .appointment-card {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar glass-card" style="margin: 1rem; height: calc(100vh - 2rem); border-radius: 24px;">
+            <div>
+                <div style="margin-bottom: 2.5rem; padding: 0 0.5rem;">
+                    <h2 style="color: var(--text-main); font-size: 1.5rem;"><i class="fas fa-user-md"
+                            style="color: var(--primary);"></i> Dr. Portal</h2>
+                </div>
+                <nav>
+                    <a href="#" class="sidebar-link active" onclick="showSection('appointments', this)"><i
+                            class="fas fa-calendar-alt"></i> Appointments</a>
+                    <a href="#" class="sidebar-link" onclick="showSection('patients', this)"><i class="fas fa-users"></i>
+                        Patient List</a>
+                </nav>
+            </div>
+            <div>
+                <a href="{{ url_for('logout') }}" class="sidebar-link" style="color: #ef4444;"><i
+                        class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="content-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; background: {{ 'rgba(239, 68, 68, 0.1)' if category == 'danger' else 'rgba(16, 185, 129, 0.1)' }}; color: {{ '#ef4444' if category == 'danger' else '#10b981' }}; border: 1px solid {{ 'rgba(239, 68, 68, 0.2)' if category == 'danger' else 'rgba(16, 185, 129, 0.2)' }}; font-weight: 500; display: flex; align-items: center; gap: 1rem;">
+                    <i class="fas {{ 'fa-exclamation-circle' if category == 'danger' else 'fa-check-circle' }}"></i>
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <!-- Appointments Section -->
+            <section id="appointments-section">
+                <h1 style="margin-bottom: 2rem;">Appointment Requests</h1>
+                {% if pending_appointments %}
+                {% for appt in pending_appointments %}
+                <div class="glass-card appointment-card animate-fade-in">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h4 style="font-size: 1.2rem;">{{ appt.patient_name }}</h4>
+                            <p style="color: var(--text-dim); margin-top: 0.5rem;">
+                                <i class="fas fa-clock"></i> {{ appt.appointment_date }} at {{ appt.appointment_time }}
+                            </p>
+                            <p style="margin-top: 1rem; font-style: italic;">"{{ appt.symptoms or 'No symptoms provided'
+                                }}"</p>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <form action="{{ url_for('handle_appointment') }}" method="POST">
+                                <input type="hidden" name="appointment_id" value="{{ appt.id }}">
+                                <button type="submit" name="action" value="accept" class="btn-primary"
+                                    style="background: var(--accent);">Accept</button>
+                                <button type="submit" name="action" value="reject" class="btn-primary"
+                                    style="background: #ef4444;">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="glass-card" style="padding: 3rem; text-align: center;">
+                    <p>No pending appointment requests.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- Patient List Section -->
+            <section id="patients-section" style="display: none;">
+                <h1 style="margin-bottom: 2rem;">Accepted Patients</h1>
+                {% if accepted_appointments %}
+                {% for appt in accepted_appointments %}
+                <div class="glass-card appointment-card animate-fade-in">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="font-size: 1.2rem;">{{ appt.patient_name }}</h4>
+                            <p style="color: var(--text-dim); margin-top: 0.25rem;">
+                                Scheduled: {{ appt.appointment_date }} at {{ appt.appointment_time }}
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <a href="{{ url_for('view_patient_reports', patient_id=appt.patient_id) }}" 
+                               class="btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;">
+                                <i class="fas fa-file-medical"></i> View Reports
+                            </a>
+                            <button class="btn-primary start-consult-btn"
+                                onclick="startConsultation('{{ appt.id }}')">
+                                Start Consultation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="glass-card" style="padding: 3rem; text-align: center;">
+                    <p>No patients in your list yet.</p>
+                </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function showSection(section, element) {
+            document.getElementById('appointments-section').style.display = section === 'appointments' ? 'block' : 'none';
+            document.getElementById('patients-section').style.display = section === 'patients' ? 'block' : 'none';
+
+            // Update sidebar links
+            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+            
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // Automatic selection based on section name
+                const links = document.querySelectorAll('.sidebar-link');
+                if (section === 'appointments') links[0].classList.add('active');
+                else if (section === 'patients') links[1].classList.add('active');
+            }
+        }
+
+        // Handle deep-linking to sections (e.g. ?section=patients)
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section');
+            if (section) {
+                showSection(section);
+            }
+        });
+
+        // Logic to enable/disable consultation button
+        function startConsultation(id) {
+            window.location.href = "/consultation/" + id;
+        }
+    </script>
+</body>
+
+</html>

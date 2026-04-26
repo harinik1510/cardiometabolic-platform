@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Patient Dashboard{% endblock %} | CardioMetabolic AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 12px 16px;
+            color: var(--text-dim);
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background: var(--primary);
+            color: white !important;
+            border: 1px solid var(--primary);
+        }
+        .dashboard-container {
+            display: flex;
+        }
+        .sidebar {
+            width: 280px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2rem 1.5rem;
+            z-index: 100;
+        }
+        .content-area {
+            flex: 1;
+            margin-left: 310px; /* 280px width + 30px margin from glass-card */
+            padding: 3rem;
+            min-height: 100vh;
+            position: relative;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── Sidebar Toggle Styles ── */
+        .sidebar-toggle-btn {
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            transition: all 0.3s;
+            margin-right: 0.8rem;
+        }
+        .sidebar-toggle-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* ── Hidden Sidebar State ── */
+        body.sidebar-hidden .sidebar {
+            transform: translateX(-350px); /* Move out of view including margins */
+        }
+        body.sidebar-hidden .content-area {
+            margin-left: 0;
+        }
+        
+        /* Floating toggle button when sidebar is hidden */
+        .floating-toggle {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 300;
+            display: none;
+        }
+        body.sidebar-hidden .floating-toggle {
+            display: flex;
+        }
+        
+        .sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── Notification Bell ── */
+        .notif-wrapper {
+            position: fixed;
+            top: 1.5rem;
+            right: 2rem;
+            z-index: 200;
+        }
+        .notif-bell {
+            position: relative;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            border-radius: 14px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-dim);
+            font-size: 1.25rem;
+        }
+        .notif-bell:hover {
+            background: rgba(255,255,255,0.12);
+            transform: scale(1.05);
+        }
+        .notif-bell.has-new {
+            color: #fff;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-color: #ef4444;
+            animation: bellPulse 2s ease-in-out infinite;
+        }
+        .notif-bell .notif-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 700;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            line-height: 1;
+            box-shadow: 0 2px 8px rgba(239,68,68,0.5);
+        }
+        .notif-bell.has-new .notif-count {
+            display: flex;
+        }
+        @keyframes bellPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+            50%      { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+        }
+
+        /* ── Dropdown Panel (Light Theme) ── */
+        .notif-dropdown {
+            display: none;
+            position: absolute;
+            top: 58px;
+            right: 0;
+            width: 380px;
+            max-height: 480px;
+            overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+            padding: 0;
+            animation: dropIn 0.25s ease;
+        }
+        .notif-dropdown.open {
+            display: block;
+        }
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .notif-dropdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 1.4rem 0.8rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .notif-dropdown-header h4 {
+            margin: 0;
+            font-size: 1rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+        .notif-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .notif-header-actions a {
+            font-size: 0.75rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .notif-header-actions a:hover {
+            text-decoration: underline;
+        }
+        .notif-clear-all {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 4px 6px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .notif-clear-all:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        .notif-clear-all[title]:hover::after {
+            content: none;
+        }
+        .notif-item {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1rem 1.4rem;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s;
+        }
+        .notif-item:hover {
+            background: #f8fafc;
+        }
+        .notif-item.unread {
+            border-left: 3px solid var(--primary);
+            background: #f0f4ff;
+        }
+        .notif-item-icon {
+            color: var(--primary);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .notif-item-body p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+        .notif-item-body .notif-time {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .notif-item-dismiss {
+            margin-left: auto;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+        .notif-item-dismiss:hover {
+            color: #ef4444;
+        }
+        .notif-item:hover .notif-item-dismiss {
+            opacity: 1;
+        }
+        .notif-empty {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #94a3b8;
+        }
+        .notif-empty i {
+            font-size: 2rem;
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+        .notif-dropdown::-webkit-scrollbar {
+            width: 4px;
+        }
+        .notif-dropdown::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Floating Toggle (visible when sidebar is hidden) -->
+        <div class="sidebar-toggle-btn floating-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar glass-card" style="margin: 1rem; height: calc(100vh - 2rem); border-radius: 24px;">
+            <div>
+                <div style="margin-bottom: 2.5rem; padding: 0 0.5rem; display: flex; align-items: center;">
+                    <div class="sidebar-toggle-btn" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                    <h2 style="color: var(--text-main); font-size: 1.5rem; margin: 0; white-space: nowrap;">
+                        <i class="fas fa-heartbeat" style="color: var(--primary);"></i> CardioAI
+                    </h2>
+                </div>
+                <nav>
+                    <a href="{{ url_for('patient_dashboard') }}" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}"><i class="fas fa-th-large"></i> Dashboard</a>
+                    <a href="{{ url_for('analysis_results') }}" class="sidebar-link {% if active_page == 'analysis' %}active{% endif %}"><i class="fas fa-chart-line"></i> Detailed Analysis</a>
+                    <a href="{{ url_for('lifestyle_advice') }}" class="sidebar-link {% if active_page == 'lifestyle' %}active{% endif %}"><i class="fas fa-heart"></i> Lifestyle Advice</a>
+                    <a href="{{ url_for('lab_reports') }}" class="sidebar-link {% if active_page == 'reports' %}active{% endif %}"><i class="fas fa-file-medical"></i> Reports</a>
+                    <a href="{{ url_for('prescriptions') }}" class="sidebar-link {% if active_page == 'prescriptions' %}active{% endif %}"><i class="fas fa-pills"></i> Prescriptions</a>
+                    <a href="{{ url_for('select_doctor') }}" class="sidebar-link {% if active_page == 'select_doctor' %}active{% endif %}"><i class="fas fa-search"></i> Find a Doctor</a>
+                    <a href="{{ url_for('patient_appointments') }}" class="sidebar-link {% if active_page == 'appointments' %}active{% endif %}"><i class="fas fa-calendar-check"></i> Appointments</a>
+                </nav>
+            </div>
+            
+            <div>
+                {% if session.get('managed_patient_id') %}
+                <a href="{{ url_for('exit_patient_mode') }}" class="sidebar-link" style="color: var(--primary); font-weight: 600;"><i class="fas fa-arrow-left"></i> Exit Patient Mode</a>
+                {% endif %}
+                <a href="{{ url_for('patient_profile') }}" class="sidebar-link {% if active_page == 'profile' %}active{% endif %}" style="margin-bottom: 0.5rem;"><i class="fas fa-user-circle"></i> Profile</a>
+                <a href="{{ url_for('logout') }}" class="sidebar-link" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <!-- Notification Bell -->
+        <div class="notif-wrapper" id="notifWrapper">
+            <div class="notif-bell" id="notifBell" title="Notifications">
+                <i class="fas fa-bell"></i>
+                <span class="notif-count" id="notifCount">0</span>
+            </div>
+            <div class="notif-dropdown" id="notifDropdown">
+                <div class="notif-dropdown-header">
+                    <h4>Notifications</h4>
+                    <div class="notif-header-actions">
+                        <a href="{{ url_for('notifications') }}">View All</a>
+                        <button class="notif-clear-all" id="notifClearAll" title="Delete all notifications">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="notifList">
+                    <div class="notif-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>Loading…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="content-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; background: {{ 'rgba(239, 68, 68, 0.1)' if category == 'danger' else 'rgba(16, 185, 129, 0.1)' }}; color: {{ '#ef4444' if category == 'danger' else '#10b981' }}; border: 1px solid {{ 'rgba(239, 68, 68, 0.2)' if category == 'danger' else 'rgba(16, 185, 129, 0.2)' }}; font-weight: 500; display: flex; align-items: center; gap: 1rem;">
+                    <i class="fas {{ 'fa-exclamation-circle' if category == 'danger' else 'fa-check-circle' }}"></i>
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-hidden');
+            // Save preference in localStorage
+            const isHidden = document.body.classList.contains('sidebar-hidden');
+            localStorage.setItem('sidebarHidden', isHidden);
+        }
+
+        // Apply preference on load
+        if (localStorage.getItem('sidebarHidden') === 'true') {
+            document.body.classList.add('sidebar-hidden');
+        }
+
+        // Convert UTC to IST (Indian Standard Time)
+        function convertUTCToLocal() {
+            document.querySelectorAll('.utc-time').forEach(el => {
+                const utcDate = el.getAttribute('data-utc');
+                if (utcDate && !el.hasAttribute('data-converted')) {
+                    // SQLite CURRENT_TIMESTAMP is 'YYYY-MM-DD HH:MM:SS'
+                    // Standardize to ISO format for reliable parsing
+                    let dateStr = utcDate.replace(' ', 'T');
+                    if (!dateStr.endsWith('Z')) dateStr += 'Z';
+                    
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime())) {
+                        const options = { 
+                            timeZone: 'Asia/Kolkata',
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit',
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit',
+                            hour12: false 
+                        };
+                        const formatter = new Intl.DateTimeFormat('en-IN', options);
+                        // Format the date (24-hour Railway timing) and append IST label
+                        el.textContent = formatter.format(date).replace(',', '') + ' IST';
+                        el.setAttribute('data-converted', 'true');
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', convertUTCToLocal);
+
+    (function() {
+        const bell = document.getElementById('notifBell');
+        const dropdown = document.getElementById('notifDropdown');
+        const countBadge = document.getElementById('notifCount');
+        const listContainer = document.getElementById('notifList');
+
+        // Toggle dropdown
+        bell.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = dropdown.classList.toggle('open');
+            if (isOpen) loadNotifications();
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('notifWrapper').contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        function iconForType(type) {
+            if (type && type.startsWith('report_upload')) return 'fas fa-file-medical';
+            if (type === 'appointment_status') return 'fas fa-calendar-check';
+            return 'fas fa-bell';
+        }
+
+        function loadNotifications() {
+            fetch('{{ url_for("api_notifications") }}')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.notifications || data.notifications.length === 0) {
+                        listContainer.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i><p>No notifications yet.</p></div>';
+                        return;
+                    }
+                    let html = '';
+                    data.notifications.forEach(function(n) {
+                        html += '<div class="notif-item' + (n.is_read ? '' : ' unread') + '">';
+                        html += '  <div class="notif-item-icon"><i class="' + iconForType(n.type) + '"></i></div>';
+                        html += '  <div class="notif-item-body">';
+                        html += '    <p>' + n.message + '</p>';
+                        html += '    <div class="notif-time">' + n.created_at + '</div>';
+                        html += '  </div>';
+                        html += '  <a class="notif-item-dismiss" href="/patient/notifications/dismiss/' + n.id + '" title="Dismiss" onclick="return confirm(\'Dismiss this notification?\');"><i class="fas fa-times"></i></a>';
+                        html += '</div>';
+                    });
+                    listContainer.innerHTML = html;
+                })
+                .catch(() => {
+                    listContainer.innerHTML = '<div class="notif-empty"><p>Could not load notifications.</p></div>';
+                });
+        }
+
+        function checkUnread() {
+            fetch('{{ url_for("api_notifications_count") }}')
+                .then(r => r.json())
+                .then(data => {
+                    const count = data.unread_count || 0;
+                    if (count > 0) {
+                        bell.classList.add('has-new');
+                        countBadge.textContent = count > 9 ? '9+' : count;
+                    } else {
+                        bell.classList.remove('has-new');
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // Initial check + poll every 30s
+        checkUnread();
+        setInterval(checkUnread, 30000);
+
+        // Clear all notifications
+        document.getElementById('notifClearAll').addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!confirm('Delete all notifications?')) return;
+            fetch('{{ url_for("api_notifications_clear") }}', { method: 'POST' })
+                .then(r => r.json())
+                .then(() => {
+                    listContainer.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i><p>No notifications yet.</p></div>';
+                    bell.classList.remove('has-new');
+                    countBadge.textContent = '0';
+                })
+                .catch(() => {});
+        });
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

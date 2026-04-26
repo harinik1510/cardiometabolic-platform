@@ -1,0 +1,39 @@
+{% extends "base_patient.html" %}
+
+{% block title %}Lab Reports{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+    <div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Lab Reports</h1>
+        <p>All reports uploaded by your lab assistant.</p>
+    </div>
+</div>
+
+<div class="glass-card" style="padding: 2.5rem;">
+    {% if uploads %}
+        {% for upload in uploads %}
+        <div class="glass-card animate-fade-in" style="padding: 1.5rem; margin-bottom: 1rem;
+             border: 1px solid var(--glass-border);
+             display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 1.2rem; align-items: center;">
+                <i class="fas fa-file-pdf" style="font-size: 2rem; color: #ef4444;"></i>
+                <div>
+                    <p style="font-weight: 500;">{{ upload.file_path }}</p>
+                    <p style="font-size: 0.8rem; color: var(--text-dim);">Uploaded: <span class="utc-time" data-utc="{{ upload.upload_date }}">{{ upload.upload_date }}</span></p>
+                </div>
+            </div>
+            <a href="{{ url_for('download_lab_report', filename=upload.file_path) }}"
+               class="btn-primary" style="padding: 8px 20px; font-size: 0.9rem;">
+                <i class="fas fa-download"></i> Download
+            </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 1.5rem;"></i>
+            <p>No lab reports uploaded yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

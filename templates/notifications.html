@@ -1,0 +1,71 @@
+{% extends "base_patient.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+    <div>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Notifications</h1>
+        <p>Stay updated on your health reports and appointments.</p>
+    </div>
+</div>
+
+<div class="glass-card" style="padding: 2.5rem;">
+    {% if notifications %}
+        {% for note in notifications %}
+            {# Parse type: could be 'report_upload', 'report_upload:filename', 'appointment_status' #}
+            {% set is_report = note.type and note.type.startswith('report_upload') %}
+            {% set report_filename = note.type.split(':', 1)[1] if is_report and ':' in note.type else None %}
+
+            <div class="glass-card animate-fade-in" style="padding: 1.5rem; margin-bottom: 1rem;
+                 border: 1px solid {{ 'var(--primary)' if not note.is_read else 'var(--glass-border)' }};
+                 display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+
+                <div style="display: flex; gap: 1.5rem; align-items: center;">
+                    <div style="color: var(--primary); font-size: 1.5rem; flex-shrink: 0;">
+                        {% if is_report %}
+                            <i class="fas fa-file-medical"></i>
+                        {% elif note.type == 'appointment_status' %}
+                            <i class="fas fa-calendar-check"></i>
+                        {% else %}
+                            <i class="fas fa-bell"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p style="font-weight: 500; margin-bottom: 0.2rem;">{{ note.message }}</p>
+                        <p style="font-size: 0.8rem; color: var(--text-dim);">{{ note.created_at }}</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.8rem; flex-shrink: 0;">
+                    {% if is_report %}
+                        {% if report_filename %}
+                            {# Direct download of the specific file #}
+                            <a href="{{ url_for('download_lab_report', filename=report_filename) }}"
+                               class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem;">
+                                <i class="fas fa-download"></i> Download Report
+                            </a>
+                        {% else %}
+                            {# Fallback: go to lab reports list page #}
+                            <a href="{{ url_for('lab_reports') }}"
+                               class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem;">
+                                <i class="fas fa-folder-open"></i> View Reports
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                    <a href="{{ url_for('dismiss_notification', notif_id=note.id) }}"
+                       class="btn-secondary" style="padding: 8px 16px; font-size: 0.8rem;"
+                       onclick="return confirm('Dismiss this notification?')">
+                        <i class="fas fa-times"></i> Dismiss
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-bell-slash" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 1.5rem;"></i>
+            <p>No notifications yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
